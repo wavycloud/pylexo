@@ -1,7 +1,8 @@
 from pprint import pprint
 
-from example import OrderFlowerInputEvent
-from pylexo import LexInputEvent, LexOutputResponse, CloseLexOutputResponse, ElicitIntentOutputResponse
+import order_flower_intent
+from pylexo import LexInputEvent, LexOutputResponse, CloseLexOutputResponse, ElicitIntentOutputResponse, \
+    ConfirmIntentOutputResponse, ElicitSlotOutputResponse
 import json
 
 orderFlowerJson = """
@@ -20,7 +21,7 @@ orderFlowerJson = """
                 "name": "OrderFlowers",
                 "slots": {
                     "PickupTime": null,
-                    "FlowerType": null,
+                    "FlowerType": "Roses",
                     "PickupDate": null
                 },
                 "confirmationStatus": "None"
@@ -43,7 +44,7 @@ def test_generic():
     assert event.currentIntent.name == 'OrderFlowers'
     assert event.currentIntent.confirmationStatus == 'None'
     assert event.currentIntent.slots['PickupTime'] == None
-    assert event.currentIntent.slots['FlowerType'] == None
+    assert event.currentIntent.slots['FlowerType'] == 'Roses'
     assert event.currentIntent.slots['PickupDate'] == None
 
     event_dict = event.to_json()
@@ -58,12 +59,15 @@ def test_generic():
     assert event_dict['currentIntent']['name'] == 'OrderFlowers'
     assert event_dict['currentIntent']['confirmationStatus'] == 'None'
     assert event_dict['currentIntent']['slots']['PickupTime'] == None
-    assert event_dict['currentIntent']['slots']['FlowerType'] == None
+    assert event_dict['currentIntent']['slots']['FlowerType'] == 'Roses'
     assert event_dict['currentIntent']['slots']['PickupDate'] == None
+    confirmIntent = ConfirmIntentOutputResponse()
+    confirmIntent.update_slots(event)
+    assert confirmIntent.dialogAction.slots.to_json() == event.currentIntent.slots.to_json()
 
 
 def test_OrderFlower():
-    event = OrderFlowerInputEvent(json.loads(orderFlowerJson))
+    event = order_flower_intent.InputEvent(json.loads(orderFlowerJson))
     assert event.messageVersion == '1.0'
     assert event.invocationSource == 'DialogCodeHook'
     assert event.userId == 'user_123'
@@ -75,7 +79,7 @@ def test_OrderFlower():
     assert event.currentIntent.name == 'OrderFlowers'
     assert event.currentIntent.confirmationStatus == 'None'
     assert event.currentIntent.slots.PickupTime == None
-    assert event.currentIntent.slots.FlowerType == None
+    assert event.currentIntent.slots.FlowerType == 'Roses'
     assert event.currentIntent.slots.PickupDate == None
 
     event_dict = event.to_json()
@@ -90,8 +94,11 @@ def test_OrderFlower():
     assert event_dict['currentIntent']['name'] == 'OrderFlowers'
     assert event_dict['currentIntent']['confirmationStatus'] == 'None'
     assert event_dict['currentIntent']['slots']['PickupTime'] == None
-    assert event_dict['currentIntent']['slots']['FlowerType'] == None
+    assert event_dict['currentIntent']['slots']['FlowerType'] == 'Roses'
     assert event_dict['currentIntent']['slots']['PickupDate'] == None
+    confirmIntent = ConfirmIntentOutputResponse()
+    confirmIntent.update_slots(event)
+    assert confirmIntent.dialogAction.slots.to_json() == event.currentIntent.slots.to_json()
 
 
 def test_lex_close_response():
@@ -110,3 +117,21 @@ def test_lex_elicit_response():
     keys = d['dialogAction'].keys()
     assert 'message' not in keys
     assert 'responseCard' not in keys
+
+
+def test_dynamic_output_slots_class():
+    event = order_flower_intent.InputEvent(json.loads(orderFlowerJson))
+    EllicitSlotOrderFlowerOutputResponse = ElicitSlotOutputResponse.create_class(order_flower_intent.SlotsProperty)
+    response = EllicitSlotOrderFlowerOutputResponse()
+    response.update_slots(event)
+    assert response.dialogAction.slots.FlowerType == 'Roses'
+    response.dialogAction.slots.FlowerType = 'Pink Rose'
+    response_dict = response.to_json()
+    pprint(response_dict)
+    assert response_dict['dialogAction']['slots']['FlowerType'] == 'Pink Rose'
+
+def test_output_classes():
+    event = order_flower_intent.InputEvent(json.loads(orderFlowerJson))
+    response = order_flower_intent.ConfirmIntentOutputResponse()
+    response.update_slots(event)
+    assert response.dialogAction.slots.FlowerType == 'Roses'

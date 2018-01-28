@@ -1,3 +1,6 @@
+import json
+from copy import deepcopy
+
 from jsonobject import JsonObject, StringProperty, ListProperty, ObjectProperty, DictProperty, IntegerProperty
 
 SAMPLE_LEX_EVENT = {
@@ -71,9 +74,13 @@ class SlotDetailValueProperty(PyLexObject):
     """ :type : List[ResolvedValueProperty]"""
 
 
+class SlotsProperty(PyLexObject):
+    pass
+
+
 class CurrentIntentProperty(PyLexObject):
     name = StringProperty('')
-    slots = DictProperty()
+    slots = ObjectProperty(SlotsProperty)
     slotDetails = DictProperty(SlotDetailValueProperty)
     confirmationStatus = StringProperty('')
 
@@ -96,6 +103,18 @@ class LexInputEvent(PyLexObject):
     messageVersion = StringProperty('')
     sessionAttributes = DictProperty(StringProperty)
     requestAttributes = DictProperty(StringProperty)
+
+    @classmethod
+    def create_class(cls, slots_property_class):
+        class NewCurrentIntentProperty(CurrentIntentProperty):
+            slots = ObjectProperty(slots_property_class)
+            """ :type : SlotsProperty """
+
+        class NewLexInputEvent(cls):
+            currentIntent = ObjectProperty(NewCurrentIntentProperty)
+            """ :type : CurrentIntentProperty """
+
+        return NewLexInputEvent
 
 
 class GenericAttachmentButtonProperty(PyLexObject):
@@ -133,8 +152,9 @@ class DialogActionProperty(PyLexObject):
 
 
 class DialogActionSlotsProperty(DialogActionProperty):
-    slots = DictProperty()
+    slots = ObjectProperty(SlotsProperty)
     """ :type : dict[str, str] """
+
 
 class LexOutputResponse(PyLexObject):
     dialogAction = ObjectProperty(DialogActionProperty)
@@ -159,21 +179,53 @@ class CloseLexOutputResponse(LexOutputResponse):
     """ :type : CloseLexOutputResponse.CloseDialogActionProperty """
 
 
-class ConfirmIntentOutputResponse(LexOutputResponse):
-    class ConfirmIntentDialogActionProperty(DialogActionSlotsProperty):
+class LexOutputSlotsResponse(LexOutputResponse):
+    class SubDialogActionSlotsProperty(DialogActionSlotsProperty):
+        pass
+
+    dialogAction = ObjectProperty(SubDialogActionSlotsProperty)
+    """ :type : LexOutputSlotsResponse.SubDialogActionSlotsProperty """
+
+    @classmethod
+    def create_class(cls, slots_property_class):
+
+        class NewIntentOutputResponse(LexOutputSlotsResponse):
+            class SubDialogActionSlotsProperty(cls.SubDialogActionSlotsProperty):
+                slots = ObjectProperty(slots_property_class)
+
+            dialogAction = ObjectProperty(SubDialogActionSlotsProperty)
+            """ :type : NewIntentOutputResponse.SubDialogActionSlotsProperty """
+
+        return NewIntentOutputResponse
+
+    def update_slots(self, event):
+        """
+        :type lex_input_event: LexInputEvent
+        :return: None
+        """
+        if isinstance(event, LexInputEvent):
+            self.dialogAction.slots = event.currentIntent.slots
+        elif isinstance(event, basestring) or isinstance(event, unicode) or isinstance(event, str):
+            self.dialogAction.slots = deepcopy(json.loads(event)['currentIntent']['slots'])
+        else:
+            self.dialogAction.slots = deepcopy(event['currentIntent']['slots'])
+
+
+class ConfirmIntentOutputResponse(LexOutputSlotsResponse):
+    class SubDialogActionSlotsProperty(DialogActionSlotsProperty):
         type = StringProperty('ConfirmIntent')
         intentName = StringProperty('')
 
-    dialogAction = ObjectProperty(ConfirmIntentDialogActionProperty)
-    """ :type : ConfirmIntentOutputResponse.ConfirmIntentDialogActionProperty """
+    dialogAction = ObjectProperty(SubDialogActionSlotsProperty)
+    """ :type : ConfirmIntentOutputResponse.SubDialogActionSlotsProperty """
 
 
-class DelegateIntentOutputResponse(LexOutputResponse):
-    class DelegateIntentDialogActionProperty(DialogActionSlotsProperty):
+class DelegateIntentOutputResponse(LexOutputSlotsResponse):
+    class SubDialogActionSlotsProperty(DialogActionSlotsProperty):
         type = StringProperty('DelegateIntent')
 
-    dialogAction = ObjectProperty(DelegateIntentDialogActionProperty)
-    """ :type : DelegateIntentOutputResponse.DelegateIntentDialogActionProperty """
+    dialogAction = ObjectProperty(SubDialogActionSlotsProperty)
+    """ :type : DelegateIntentOutputResponse.SubDialogActionSlotsProperty """
 
 
 class ElicitIntentOutputResponse(LexOutputResponse):
@@ -184,11 +236,11 @@ class ElicitIntentOutputResponse(LexOutputResponse):
     """ :type : ElicitIntentOutputResponse.ElicitIntentDialogActionProperty """
 
 
-class ElicitSlotOutputResponse(LexOutputResponse):
-    class ElicitSlotDialogActionProperty(DialogActionSlotsProperty):
+class ElicitSlotOutputResponse(LexOutputSlotsResponse):
+    class SubDialogActionSlotsProperty(DialogActionSlotsProperty):
         type = StringProperty('ElicitIntent')
         intentName = StringProperty('')
         slotToElicit = StringProperty('')
 
-    dialogAction = ObjectProperty(ElicitSlotDialogActionProperty)
-    """ :type : ElicitSlotOutputResponse.ElicitSlotDialogActionProperty """
+    dialogAction = ObjectProperty(SubDialogActionSlotsProperty)
+    """ :type : ElicitSlotOutputResponse.SubDialogActionSlotsProperty """

@@ -69,3 +69,9 @@ print("PickupDate:       {}".format(pylexo_event.currentIntent.slots.PickupDate)
 # back to dict
 event_dict = pylexo_event.to_dict()
 ```
+
+# command line to generate stubs
+after installing execute the following command to generate a file like order_flower_intent.py
+```
+pylexo -s PickupTime FlowerType PickupDate -f order_flower_intent.py
+```
