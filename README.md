@@ -65,4 +65,7 @@ pylexo_event = OrderFlowerInputEvent(event)
 print("PickupTime:       {}".format(pylexo_event.currentIntent.slots.PickupTime))
 print("FlowerType:       {}".format(pylexo_event.currentIntent.slots.FlowerType))
 print("PickupDate:       {}".format(pylexo_event.currentIntent.slots.PickupDate))
+
+# back to dict
+event_dict = pylexo_event.to_dict()
 ```

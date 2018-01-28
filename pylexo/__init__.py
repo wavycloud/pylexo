@@ -1,6 +1,4 @@
-import json
-
-from jsonobject import JsonObject, StringProperty, ListProperty, ObjectProperty, DictProperty
+from jsonobject import JsonObject, StringProperty, ListProperty, ObjectProperty, DictProperty, IntegerProperty
 
 SAMPLE_LEX_EVENT = {
     "currentIntent": {
@@ -48,13 +46,16 @@ SAMPLE_LEX_EVENT = {
 }
 
 
-class BotProperty(JsonObject):
-    name = StringProperty()
-    alias = StringProperty()
-    version = StringProperty()
+class PyLexObject(JsonObject):
+    pass
 
 
-class SlotDetailValueProperty(JsonObject):
+class ResolvedValueProperty(PyLexObject):
+    """ {"value": "resolved value"} """
+    value = StringProperty('')
+
+
+class SlotDetailValueProperty(PyLexObject):
     """
     {
         "resolutions": [
@@ -65,37 +66,129 @@ class SlotDetailValueProperty(JsonObject):
     }
     """
 
-    class ResolvedValueProperty(JsonObject):
-        """ {"value": "resolved value"} """
-        value = StringProperty()
-
-    originalValue = StringProperty()
+    originalValue = StringProperty('')
     resolutions = ListProperty(ResolvedValueProperty)
+    """ :type : List[ResolvedValueProperty]"""
 
-class CurrentIntentProperty(JsonObject):
-    name = StringProperty()
+
+class CurrentIntentProperty(PyLexObject):
+    name = StringProperty('')
     slots = DictProperty()
     slotDetails = DictProperty(SlotDetailValueProperty)
-    confirmationStatus = StringProperty()
+    confirmationStatus = StringProperty('')
 
 
-class LexInputEvent(JsonObject):
+class BotProperty(PyLexObject):
+    name = StringProperty('')
+    alias = StringProperty('')
+    version = StringProperty('')
+
+
+class LexInputEvent(PyLexObject):
     currentIntent = ObjectProperty(CurrentIntentProperty)
     """ :type : CurrentIntentProperty """
     bot = ObjectProperty(BotProperty)
     """ :type : BotProperty """
-    userId = StringProperty()
-    inputTranscript = StringProperty()
-    invocationSource = StringProperty()
-    outputDialogMode = StringProperty()
-    messageVersion = StringProperty()
-    sessionAttributes = DictProperty()
-    requestAttributes = DictProperty()
+    userId = StringProperty('')
+    inputTranscript = StringProperty('')
+    invocationSource = StringProperty('')
+    outputDialogMode = StringProperty('')
+    messageVersion = StringProperty('')
+    sessionAttributes = DictProperty(StringProperty)
+    requestAttributes = DictProperty(StringProperty)
 
 
-__all__ = [
-    'BotProperty',
-    'SlotDetailValueProperty',
-    'CurrentIntentProperty',
-    'LexInputEvent',
-]
+class GenericAttachmentButtonProperty(PyLexObject):
+    text = StringProperty('')
+    value = StringProperty('')
+
+
+class GenericAttachmentsProperty(PyLexObject):
+    title = StringProperty('')
+    subTitle = StringProperty('')
+    imageUrl = StringProperty('')
+    attachmentLinkUrl = StringProperty('')
+    buttons = ListProperty(GenericAttachmentButtonProperty)
+    """ :type : List[GenericAttachmentButtonProperty] """
+
+
+class ResponseCardProperty(PyLexObject):
+    version = IntegerProperty()
+    contentType = StringProperty('application/vnd.amazonaws.card.generic')
+    genericAttachments = ListProperty(GenericAttachmentsProperty)
+    """ :type : List[GenericAttachmentsProperty] """
+
+
+class MessageProperty(PyLexObject):
+    contentType = StringProperty('PlainText')
+    content = StringProperty('')
+
+
+class DialogActionProperty(PyLexObject):
+    type = StringProperty('')
+    message = ObjectProperty(MessageProperty)
+    """ :type : MessageProperty """
+    responseCard = ObjectProperty(ResponseCardProperty)
+    """ :type : ResponseCardProperty """
+
+
+class DialogActionSlotsProperty(DialogActionProperty):
+    slots = DictProperty()
+    """ :type : dict[str, str] """
+
+class LexOutputResponse(PyLexObject):
+    dialogAction = ObjectProperty(DialogActionProperty)
+    """ :type : DialogActionProperty """
+    sessionAttributes = JsonObject()
+
+    def to_json(self):
+        d = super(LexOutputResponse, self).to_json()
+        if hasattr(self.dialogAction, 'message') and not self.dialogAction.message.content:
+            del d['dialogAction']['message']
+        if hasattr(self.dialogAction, 'responseCard') and self.dialogAction.responseCard.version is None:
+            del d['dialogAction']['responseCard']
+        return d
+
+
+class CloseLexOutputResponse(LexOutputResponse):
+    class CloseDialogActionProperty(DialogActionProperty):
+        type = StringProperty('Close')
+        fulfillmentState = StringProperty('Fulfilled')
+
+    dialogAction = ObjectProperty(CloseDialogActionProperty)
+    """ :type : CloseLexOutputResponse.CloseDialogActionProperty """
+
+
+class ConfirmIntentOutputResponse(LexOutputResponse):
+    class ConfirmIntentDialogActionProperty(DialogActionSlotsProperty):
+        type = StringProperty('ConfirmIntent')
+        intentName = StringProperty('')
+
+    dialogAction = ObjectProperty(ConfirmIntentDialogActionProperty)
+    """ :type : ConfirmIntentOutputResponse.ConfirmIntentDialogActionProperty """
+
+
+class DelegateIntentOutputResponse(LexOutputResponse):
+    class DelegateIntentDialogActionProperty(DialogActionSlotsProperty):
+        type = StringProperty('DelegateIntent')
+
+    dialogAction = ObjectProperty(DelegateIntentDialogActionProperty)
+    """ :type : DelegateIntentOutputResponse.DelegateIntentDialogActionProperty """
+
+
+class ElicitIntentOutputResponse(LexOutputResponse):
+    class ElicitIntentDialogActionProperty(DialogActionProperty):
+        type = StringProperty('ElicitIntent')
+
+    dialogAction = ObjectProperty(ElicitIntentDialogActionProperty)
+    """ :type : ElicitIntentOutputResponse.ElicitIntentDialogActionProperty """
+
+
+class ElicitSlotOutputResponse(LexOutputResponse):
+    class ElicitSlotDialogActionProperty(DialogActionSlotsProperty):
+        type = StringProperty('ElicitIntent')
+        intentName = StringProperty('')
+        slotToElicit = StringProperty('')
+
+    dialogAction = ObjectProperty(ElicitSlotDialogActionProperty)
+    """ :type : ElicitSlotOutputResponse.ElicitSlotDialogActionProperty """

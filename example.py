@@ -1,8 +1,7 @@
-from jsonobject import JsonObject, StringProperty, ObjectProperty
-from pylexo import CurrentIntentProperty, LexInputEvent
+from pylexo import PyLexObject, CurrentIntentProperty, LexInputEvent, StringProperty, ObjectProperty
 
 
-class OrderFlowerSlotsProperty(JsonObject):
+class OrderFlowerSlotsProperty(PyLexObject):
     PickupTime = StringProperty()
     FlowerType = StringProperty()
     PickupDate = StringProperty()
