@@ -2,6 +2,8 @@ import os
 
 template = '''import pylexo
 
+class Slots:
+{slot_strings}
 
 class SlotsProperty(pylexo.SlotsProperty):
 {slot_lines}
@@ -55,7 +57,8 @@ class DelegateIntentOutputResponse(pylexo.DelegateIntentOutputResponse):
 
 def generate_file_string(slots):
     slot_lines = '\n'.join(['    {} = pylexo.StringProperty()'.format(slot_name) for slot_name in slots])
-    file_string = template.format(slot_lines=slot_lines)
+    slot_strings = '\n'.join(['    {} = "{}"'.format(slot_name, slot_name) for slot_name in slots])
+    file_string = template.format(slot_lines=slot_lines, slot_strings=slot_strings)
     return file_string
 
 
