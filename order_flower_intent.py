@@ -2,8 +2,8 @@ import pylexo
 
 
 class SlotsProperty(pylexo.SlotsProperty):
-    PickupTime = pylexo.StringProperty()
-    FlowerType = pylexo.StringProperty()
+    PickupTime = pylexo.StringProperty()
+    FlowerType = pylexo.StringProperty()
     PickupDate = pylexo.StringProperty()
 
 

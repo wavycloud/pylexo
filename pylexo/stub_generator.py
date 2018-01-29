@@ -54,7 +54,7 @@ class DelegateIntentOutputResponse(pylexo.DelegateIntentOutputResponse):
 
 
 def generate_file_string(slots):
-    slot_lines = os.linesep.join(['    {} = pylexo.StringProperty()'.format(slot_name) for slot_name in slots])
+    slot_lines = '\n'.join(['    {} = pylexo.StringProperty()'.format(slot_name) for slot_name in slots])
     file_string = template.format(slot_lines=slot_lines)
     return file_string
 
