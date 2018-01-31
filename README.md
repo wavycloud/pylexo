@@ -8,7 +8,9 @@ To use pylexo in AWS Lambda you will have to package pylexo in your lambda packa
 pip install pylexo -t /path/to/lambda/package
 ```
 you can also put it in a sub folder
+```
 pip install pylexo -t /path/to/lambda/package/subfolder
+```
 but you will have to run this code in your AWS Lambda handler before importing pylexo
 ```python
 import os
