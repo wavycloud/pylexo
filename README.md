@@ -1,16 +1,35 @@
 # pylexo
-Pylexo wraps lex lambda events and converts it into an object so you don't have to remember string keys.
+Pylexo wraps lex lambda events and converts it into an object so you don't have to remember string keys. All you have to do is pass your event to LexInputEvent
 
-All you have to do is pass your event to LexInputEvent
+# Installation
+To use pylexo in AWS Lambda you will have to package pylexo in your lambda package. pylexo depends on jsonobject 0.7.1 (0.8 wouldn't work in AWS Lambda)
 
-This is what you can do with 
+```
+pip install pylexo -t /path/to/lambda/package
+```
+you can also put it in a sub folder
+pip install pylexo -t /path/to/lambda/package/subfolder
+but you will have to run this code in your AWS Lambda handler before importing pylexo
 ```python
-from pylexo import LexInputEvent
-event = {
+import os
+root = os.environ.get("LAMBDA_TASK_ROOT")
+if root:
+    packages = os.path.join(root, 'subfolder')
+    logging.info("Inserting {} to path".format(packages))
+    sys.path.insert(0, packages)
+```
+
+# Usage
+This is how to enable auto-complete
+```python
+import pylexo
+event =  {
     "messageVersion": "1.0",
     "invocationSource": "DialogCodeHook",
-    "userId": "abcde",
-    "sessionAttributes": {},
+    "userId": "user_123",
+    "sessionAttributes": {
+        "RequestorCity": "Portland"
+    },
     "bot": {
         "name": "OrderFlowers",
         "alias": None,
@@ -21,14 +40,14 @@ event = {
         "name": "OrderFlowers",
         "slots": {
             "PickupTime": None,
-            "FlowerType": None,
+            "FlowerType": "Roses",
             "PickupDate": None
         },
         "confirmationStatus": "None"
     }
 }
 
-pylexo_event = LexInputEvent(event)
+pylexo_event = pylexo.LexInputEvent(event)
 print("messageVersion:   {}".format(pylexo_event.messageVersion))
 print("invocationSource: {}".format(pylexo_event.invocationSource))
 print("userId:           {}".format(pylexo_event.userId))
@@ -37,41 +56,28 @@ print("PickupTime:       {}".format(pylexo_event.currentIntent.slots['PickupTime
 
 # Custom Slots
 if you would like to have autocomplete on slots you will have to Override LexInputEvent. Please note that we rely on jsonobject for modeling JSON schema.
+you can use pylexo command line interface to generate those stubs. after installing pylexo execute the following command to generate a file like order_flower_intent.py
+```
+pylexo --filepath order_flower_intent.py --slots PickupTime FlowerType PickupDate --sessions RequestorCity
+```
+
+once order_flower_intent.py is generated you can do the following
 
 ```python
-from jsonobject import JsonObject, StringProperty, ObjectProperty
-from pylexo import CurrentIntentProperty, LexInputEvent
+import order_flower_intent
 
+def lambda_handler(event, context):
+    flower_event = order_flower_intent.LexInputEvent(event)
+    print(event.messageVersion)
+    print(event.invocationSource)
+    print(event.userId)
+    print(event.bot.name)
+    print(event.bot.alias)
+    print(event.bot.version)
+    print(event.outputDialogMode)
+    print(event.currentIntent.name)
+    print(event.currentIntent.confirmationStatus)
+    print(event.currentIntent.slots.PickupTime)
+    print(event.currentIntent.slots.FlowerType)
+    print(event.currentIntent.slots.PickupDate)
 
-class OrderFlowerSlotsProperty(JsonObject):
-    PickupTime = StringProperty()
-    FlowerType = StringProperty()
-    PickupDate = StringProperty()
-
-
-class OrderFlowerCurrentIntentProperty(CurrentIntentProperty):
-    slots = ObjectProperty(OrderFlowerSlotsProperty)
-    """ :type : OrderFlowerSlotsProperty """
-
-
-class OrderFlowerInputEvent(LexInputEvent):
-    currentIntent = ObjectProperty(OrderFlowerCurrentIntentProperty)
-    """ :type : OrderFlowerCurrentIntentProperty """
-```
-
-Now wrap your event using OrderFlowerInputEvent class to get autocomplete on slots
-```python
-pylexo_event = OrderFlowerInputEvent(event)
-print("PickupTime:       {}".format(pylexo_event.currentIntent.slots.PickupTime))
-print("FlowerType:       {}".format(pylexo_event.currentIntent.slots.FlowerType))
-print("PickupDate:       {}".format(pylexo_event.currentIntent.slots.PickupDate))
-
-# back to dict
-event_dict = pylexo_event.to_dict()
-```
-
-# command line to generate stubs
-after installing execute the following command to generate a file like order_flower_intent.py
-```
-pylexo -s PickupTime FlowerType PickupDate -f order_flower_intent.py
-```

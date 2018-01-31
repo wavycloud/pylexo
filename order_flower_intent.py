@@ -6,10 +6,18 @@ class Slots:
     FlowerType = "FlowerType"
     PickupDate = "PickupDate"
 
+
+class SessionAttributes:
+    RequestorCity = "RequestorCity"
+
 class SlotsProperty(pylexo.SlotsProperty):
     PickupTime = pylexo.StringProperty()
     FlowerType = pylexo.StringProperty()
     PickupDate = pylexo.StringProperty()
+
+
+class SessionAttributesProperty(pylexo.SessionAttributesProperty):
+    RequestorCity = pylexo.StringProperty()
 
 
 class CurrentIntentProperty(pylexo.CurrentIntentProperty):
@@ -17,17 +25,21 @@ class CurrentIntentProperty(pylexo.CurrentIntentProperty):
     """ :type : SlotsProperty """
 
 
-class InputEvent(pylexo.LexInputEvent):
+class LexInputEvent(pylexo.LexInputEvent):
     currentIntent = pylexo.ObjectProperty(CurrentIntentProperty)
     """ :type : CurrentIntentProperty """
+    sessionAttributes = pylexo.ObjectProperty(SessionAttributesProperty)
+    """ :type : SessionAttributesProperty """
 
 
 class CloseLexOutputResponse(pylexo.CloseLexOutputResponse):
-    pass
+    sessionAttributes = pylexo.ObjectProperty(SessionAttributesProperty)
+    """ :type : SessionAttributesProperty """
 
 
 class ElicitIntentOutputResponse(pylexo.ElicitIntentOutputResponse):
-    pass
+    sessionAttributes = pylexo.ObjectProperty(SessionAttributesProperty)
+    """ :type : SessionAttributesProperty """
 
 
 class ElicitSlotOutputResponse(pylexo.ElicitSlotOutputResponse):
@@ -37,6 +49,8 @@ class ElicitSlotOutputResponse(pylexo.ElicitSlotOutputResponse):
 
     dialogAction = pylexo.ObjectProperty(SubDialogActionSlotsProperty)
     """ :type : ElicitSlotOutputResponse.SubDialogActionSlotsProperty """
+    sessionAttributes = pylexo.ObjectProperty(SessionAttributesProperty)
+    """ :type : SessionAttributesProperty """
 
 
 class ConfirmIntentOutputResponse(pylexo.ConfirmIntentOutputResponse):
@@ -46,6 +60,8 @@ class ConfirmIntentOutputResponse(pylexo.ConfirmIntentOutputResponse):
 
     dialogAction = pylexo.ObjectProperty(SubDialogActionSlotsProperty)
     """ :type : ConfirmIntentOutputResponse.SubDialogActionSlotsProperty """
+    sessionAttributes = pylexo.ObjectProperty(SessionAttributesProperty)
+    """ :type : SessionAttributesProperty """
 
 
 class DelegateIntentOutputResponse(pylexo.DelegateIntentOutputResponse):
@@ -55,3 +71,5 @@ class DelegateIntentOutputResponse(pylexo.DelegateIntentOutputResponse):
 
     dialogAction = pylexo.ObjectProperty(SubDialogActionSlotsProperty)
     """ :type : DelegateIntentOutputResponse.SubDialogActionSlotsProperty """
+    sessionAttributes = pylexo.ObjectProperty(SessionAttributesProperty)
+    """ :type : SessionAttributesProperty """

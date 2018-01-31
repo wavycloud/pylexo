@@ -50,7 +50,8 @@ SAMPLE_LEX_EVENT = {
 
 
 class PyLexObject(JsonObject):
-    pass
+    def to_dict(self):
+        return self.to_json()
 
 
 class ResolvedValueProperty(PyLexObject):
@@ -78,6 +79,14 @@ class SlotsProperty(PyLexObject):
     pass
 
 
+class SessionAttributesProperty(PyLexObject):
+    pass
+
+
+class RequestAttributesProperty(PyLexObject):
+    pass
+
+
 class CurrentIntentProperty(PyLexObject):
     name = StringProperty('')
     slots = ObjectProperty(SlotsProperty)
@@ -101,8 +110,10 @@ class LexInputEvent(PyLexObject):
     invocationSource = StringProperty('')
     outputDialogMode = StringProperty('')
     messageVersion = StringProperty('')
-    sessionAttributes = DictProperty(StringProperty)
-    requestAttributes = DictProperty(StringProperty)
+    sessionAttributes = ObjectProperty(SessionAttributesProperty)
+    """ :type : SessionAttributesProperty """
+    requestAttributes = ObjectProperty(RequestAttributesProperty)
+    """ :type : RequestAttributesProperty """
 
     @classmethod
     def create_class(cls, slots_property_class):
@@ -159,7 +170,20 @@ class DialogActionSlotsProperty(DialogActionProperty):
 class LexOutputResponse(PyLexObject):
     dialogAction = ObjectProperty(DialogActionProperty)
     """ :type : DialogActionProperty """
-    sessionAttributes = JsonObject()
+    sessionAttributes = ObjectProperty(SessionAttributesProperty)
+    """ :type : SessionAttributesProperty """
+
+    def update_from_input(self, event):
+        """
+
+        :type event: LexInputEvent
+        :return:
+        """
+        self.update_session_attributes(event)
+
+    def update_session_attributes(self, event):
+        for key, val in event.sessionAttributes.iteritems():
+            self.sessionAttributes[key] = val
 
     def to_json(self):
         d = super(LexOutputResponse, self).to_json()
@@ -198,17 +222,34 @@ class LexOutputSlotsResponse(LexOutputResponse):
 
         return NewIntentOutputResponse
 
+    def update_from_input(self, event):
+        """
+
+        :type event: LexInputEvent
+        :return:
+        """
+        super(LexOutputSlotsResponse, self).update_from_input(event)
+        self.update_slots(event)
+        self.update_intent_name(event)
+
+    def update_intent_name(self, event):
+        if hasattr(self.dialogAction, 'intentName'):
+            self.dialogAction.intentName = event.currentIntent.name
+
     def update_slots(self, event):
         """
         :type lex_input_event: LexInputEvent
         :return: None
         """
         if isinstance(event, LexInputEvent):
-            self.dialogAction.slots = event.currentIntent.slots
+            event_slots = event.currentIntent.slots
         elif isinstance(event, basestring) or isinstance(event, unicode) or isinstance(event, str):
-            self.dialogAction.slots = deepcopy(json.loads(event)['currentIntent']['slots'])
+            event_slots = deepcopy(json.loads(event)['currentIntent']['slots'])
         else:
-            self.dialogAction.slots = deepcopy(event['currentIntent']['slots'])
+            event_slots = deepcopy(event['currentIntent']['slots'])
+
+        for key, val in event_slots.iteritems():
+            self.dialogAction.slots[key] = val
 
 
 class ConfirmIntentOutputResponse(LexOutputSlotsResponse):
