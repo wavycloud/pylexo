@@ -279,7 +279,7 @@ class ElicitIntentOutputResponse(LexOutputResponse):
 
 class ElicitSlotOutputResponse(LexOutputSlotsResponse):
     class SubDialogActionSlotsProperty(DialogActionSlotsProperty):
-        type = StringProperty('ElicitIntent')
+        type = StringProperty('ElicitSlot')
         intentName = StringProperty('')
         slotToElicit = StringProperty('')
 
