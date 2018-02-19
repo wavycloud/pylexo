@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name='pylexo',
-      version='0.3.0',
+      version='0.4.0',
       packages=find_packages(),
       description='Pythonic Lex Object (PyLexO)',
       author='WavyCloud',
@@ -13,7 +13,7 @@ setup(name='pylexo',
       },
       url='https://github.com/wavycloud/pylexo',
       py_modules=['pylexo'],
-      install_requires=['jsonobject==0.7.1'],
+      install_requires=['schematics==2.0.1'],
       license='MIT License',
       zip_safe=True,
       keywords='aws python lex lambda',

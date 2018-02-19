@@ -5,6 +5,7 @@ from pylexo import LexInputEvent, LexOutputResponse, CloseLexOutputResponse, Eli
     ConfirmIntentOutputResponse, ElicitSlotOutputResponse
 import json
 
+
 orderFlowerJson = """
         {
             "messageVersion": "1.0",
@@ -30,11 +31,14 @@ orderFlowerJson = """
             }
         }
     """
+GENERIC_INTENT_LEX_INPUT = LexInputEvent(json.loads(orderFlowerJson))
+ORDER_FLOWER_INTENT_LEX_INPUT = order_flower_intent.LexInputEvent(json.loads(orderFlowerJson))
+
 
 
 def test_generic():
-    event = LexInputEvent(json.loads(orderFlowerJson))
-    d = event.to_dict()
+    event = GENERIC_INTENT_LEX_INPUT
+    d = event.to_primitive()
     assert event.messageVersion == '1.0'
     assert event.invocationSource == 'DialogCodeHook'
     assert event.userId == 'user_123'
@@ -49,7 +53,7 @@ def test_generic():
     assert event.currentIntent.slots['FlowerType'] == 'Roses'
     assert event.currentIntent.slots['PickupDate'] is None
 
-    event_dict = event.to_dict()
+    event_dict = event.to_primitive()
     assert event_dict['messageVersion'] == '1.0'
     assert event_dict['invocationSource'] == 'DialogCodeHook'
     assert event_dict['userId'] == 'user_123'
@@ -65,13 +69,9 @@ def test_generic():
     assert event_dict['currentIntent']['slots']['PickupTime'] is None
     assert event_dict['currentIntent']['slots']['FlowerType'] == 'Roses'
     assert event_dict['currentIntent']['slots']['PickupDate'] is None
-    confirmIntent = ConfirmIntentOutputResponse()
-    confirmIntent.update_slots(event)
-    assert confirmIntent.dialogAction.slots.to_dict() == event.currentIntent.slots.to_dict()
-
 
 def test_OrderFlower():
-    event = order_flower_intent.LexInputEvent(json.loads(orderFlowerJson))
+    event = ORDER_FLOWER_INTENT_LEX_INPUT
     assert event.messageVersion == '1.0'
     assert event.invocationSource == 'DialogCodeHook'
     assert event.userId == 'user_123'
@@ -86,7 +86,7 @@ def test_OrderFlower():
     assert event.currentIntent.slots.FlowerType == 'Roses'
     assert event.currentIntent.slots.PickupDate is None
 
-    event_dict = event.to_dict()
+    event_dict = event.to_primitive()
     assert event_dict['messageVersion'] == '1.0'
     assert event_dict['invocationSource'] == 'DialogCodeHook'
     assert event_dict['userId'] == 'user_123'
@@ -102,26 +102,37 @@ def test_OrderFlower():
     assert event_dict['currentIntent']['slots']['PickupTime'] is None
     assert event_dict['currentIntent']['slots']['FlowerType'] == 'Roses'
     assert event_dict['currentIntent']['slots']['PickupDate'] is None
+
+
+def test_flower_confirm_intent():
     confirmIntent = order_flower_intent.ConfirmIntentOutputResponse()
-    confirmIntent.update_from_input(event)
+    confirmIntent.update_from_input(ORDER_FLOWER_INTENT_LEX_INPUT)
     assert confirmIntent.dialogAction.intentName == 'OrderFlowers'
-    assert event.sessionAttributes.RequestorCity == confirmIntent.sessionAttributes.RequestorCity
-    assert dict(confirmIntent.sessionAttributes) == dict(event.sessionAttributes)
-    assert confirmIntent.dialogAction.slots.to_dict() == event.currentIntent.slots.to_dict()
+    assert ORDER_FLOWER_INTENT_LEX_INPUT.sessionAttributes.RequestorCity == confirmIntent.sessionAttributes.RequestorCity
+    assert dict(confirmIntent.sessionAttributes) == dict(ORDER_FLOWER_INTENT_LEX_INPUT.sessionAttributes)
+    assert confirmIntent.dialogAction.slots.to_primitive() == ORDER_FLOWER_INTENT_LEX_INPUT.currentIntent.slots.to_primitive()
+
+
+def test_confirm_intent():
+    confirmIntent = ConfirmIntentOutputResponse()
+    confirmIntent.update_slots(GENERIC_INTENT_LEX_INPUT)
+    assert confirmIntent.dialogAction.slots.to_primitive() == GENERIC_INTENT_LEX_INPUT.currentIntent.slots
 
 
 def test_lex_close_response():
     response = CloseLexOutputResponse()
 
-    d = response.to_dict()
+    d = response.to_primitive()
     pprint(d)
     keys = d['dialogAction'].keys()
     assert 'message' not in keys
     assert 'responseCard' not in keys
+    response.dialogAction.message.content = "Hello"
+    pprint(response.to_primitive())
 
 def test_lex_elicit_response():
     response = ElicitIntentOutputResponse()
-    d = response.to_dict()
+    d = response.to_primitive()
     pprint(d)
     keys = d['dialogAction'].keys()
     assert 'message' not in keys
@@ -135,7 +146,7 @@ def test_dynamic_output_slots_class():
     response.update_slots(event)
     assert response.dialogAction.slots.FlowerType == 'Roses'
     response.dialogAction.slots.FlowerType = 'Pink Rose'
-    response_dict = response.to_dict()
+    response_dict = response.to_primitive()
     pprint(response_dict)
     assert response_dict['dialogAction']['slots']['FlowerType'] == 'Pink Rose'
 
@@ -144,3 +155,7 @@ def test_output_classes():
     response = order_flower_intent.ConfirmIntentOutputResponse()
     response.update_slots(event)
     assert response.dialogAction.slots.FlowerType == 'Roses'
+
+
+def test_slots_filled():
+    assert ORDER_FLOWER_INTENT_LEX_INPUT.is_all_slots_filled() == False
