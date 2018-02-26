@@ -2,7 +2,7 @@ from pprint import pprint
 
 import order_flower_intent
 from pylexo import LexInputEvent, LexOutputResponse, CloseLexOutputResponse, ElicitIntentOutputResponse, \
-    ConfirmIntentOutputResponse, ElicitSlotOutputResponse
+    ConfirmIntentOutputResponse, ElicitSlotOutputResponse, runtime_response
 import json
 
 
@@ -159,3 +159,46 @@ def test_output_classes():
 
 def test_slots_filled():
     assert ORDER_FLOWER_INTENT_LEX_INPUT.is_all_slots_filled() == False
+
+
+def test_post_text():
+    response = {
+        'intentName': 'string',
+        'slots': {
+            'string': 'string'
+        },
+        'sessionAttributes': {
+            'string': 'string'
+        },
+        'message': 'string',
+        'messageFormat': 'PlainText',
+        'dialogState': 'Fulfilled',
+        'slotToElicit': 'string',
+        'responseCard': {
+            'version': 'string',
+            'contentType': 'application/vnd.amazonaws.card.generic',
+            'genericAttachments': [
+                {
+                    'title': 'string',
+                    'subTitle': 'string',
+                    'attachmentLinkUrl': 'string',
+                    'imageUrl': 'string',
+                    'buttons': [
+                        {
+                            'text': 'string',
+                            'value': 'string'
+                        },
+                    ]
+                },
+            ]
+        }
+    }
+    response_o = runtime_response.LexPostTextResponse(response)
+    assert response_o.is_fulfilled()
+    assert response_o.is_plain_text()
+    assert not response_o.is_custom_payload()
+    assert not response_o.is_composite()
+    assert not response_o.is_confirm_intent()
+    assert not response_o.is_elicit_intent()
+    assert not response_o.is_elicit_slot()
+    assert not response_o.is_failed()

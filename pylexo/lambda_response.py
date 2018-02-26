@@ -4,22 +4,8 @@ from copy import deepcopy
 from schematics import types
 from schematics.schema import Field
 
-from .base import PyLexObject, SlotsProperty, SessionAttributesProperty
+from .base import PyLexObject, SlotsProperty, GenericAttachmentsProperty
 from .input import LexInputEvent
-
-
-class GenericAttachmentButtonProperty(PyLexObject):
-    text = types.StringType(default='')
-    value = types.StringType(default='')
-
-
-class GenericAttachmentsProperty(PyLexObject):
-    title = types.StringType(default='')
-    subTitle = types.StringType(default='')
-    imageUrl = types.StringType(default='')
-    attachmentLinkUrl = types.StringType(default='')
-    buttons = types.ListType(types.ModelType(GenericAttachmentButtonProperty), default=[])
-    """ :type : List[GenericAttachmentButtonProperty] """
 
 
 class ResponseCardProperty(PyLexObject):
@@ -50,7 +36,7 @@ class DialogActionSlotsProperty(DialogActionProperty):
 class LexOutputResponse(PyLexObject):
     dialogAction = types.ModelType(DialogActionProperty, default=DialogActionProperty())
     """ :type : DialogActionProperty """
-    sessionAttributes = types.ModelType(SessionAttributesProperty, default=SessionAttributesProperty())
+    sessionAttributes = types.DictType(types.StringType(), default={})
     """ :type : SessionAttributesProperty """
 
     def update_from_input(self, event):

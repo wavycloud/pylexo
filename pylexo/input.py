@@ -100,7 +100,7 @@ class LexInputEvent(PyLexObject):
     requestAttributes = types.DictType(types.StringType(), default={})
 
     def is_all_slots_filled(self):
-        return None not in self.currentIntent.slots.values()
+        return all(self.currentIntent.slots.values())
 
     @classmethod
     def create_class(cls, slots_property_class):

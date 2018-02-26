@@ -1,4 +1,4 @@
-from schematics import models
+from schematics import models, types
 
 
 class PyLexObject(models.Model):
@@ -17,3 +17,17 @@ class SlotsProperty(PyLexObject):
 
 class SessionAttributesProperty(PyLexObject):
     pass
+
+
+class GenericAttachmentButtonProperty(PyLexObject):
+    text = types.StringType(default='')
+    value = types.StringType(default='')
+
+
+class GenericAttachmentsProperty(PyLexObject):
+    title = types.StringType(default='')
+    subTitle = types.StringType(default='')
+    imageUrl = types.StringType(default='')
+    attachmentLinkUrl = types.StringType(default='')
+    buttons = types.ListType(types.ModelType(GenericAttachmentButtonProperty), default=[])
+    """ :type : List[GenericAttachmentButtonProperty] """

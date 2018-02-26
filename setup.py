@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name='pylexo',
-      version='0.4.0',
+      version='0.6.0',
       packages=find_packages(),
       description='Pythonic Lex Object (PyLexO)',
       author='WavyCloud',
